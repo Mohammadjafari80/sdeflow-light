@@ -97,7 +97,7 @@ elif args.dataset == 'cifar':
     input_height = 32
     dimx = input_channels * input_height ** 2
     cifar_labels = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
-    print(f'Normal Class is: {args.normal_class} ({cifar_labels[args.normal_class]}')
+    print(f'Normal Class is: {args.normal_class} ({cifar_labels[args.normal_class]})')
     transform = transforms.Compose([transforms.RandomHorizontalFlip(), transforms.ToTensor()])
     trainset = torchvision.datasets.CIFAR10(root=os.path.join(args.dataroot, 'cifar10'), train=True,
                                             download=True, transform=transform)
@@ -167,7 +167,7 @@ def evaluate():
 
     with open(  './test_bpds.npy', 'wb') as f:
          np.save(f, test_bpd)
-         
+
     return test_bpd.mean(), test_bpd.std() / len(testloader.dataset.data) ** 0.5
 
 
