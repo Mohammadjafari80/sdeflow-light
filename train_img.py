@@ -207,7 +207,7 @@ while not_finished:
             bpd, std_err, auc = evaluate()
             writer.add_scalar('bpd', bpd, count)
             writer.add_scalar('bpd_std_err', std_err, count)
-            print_(f'Iteration {count} \tBPD {bpd}\tAUC: {auc * 100}')
+            print_(f'Iteration {count} \tBPD {bpd}\tAUC: {auc * 100}\tLoss: {loss.item()}')
 
         if count >= args.num_iterations:
             not_finished = False
@@ -218,7 +218,7 @@ while not_finished:
             gen_sde.eval()
             image_grid = get_grid(gen_sde, input_channels, input_height, n=4,
                                       num_steps=args.num_steps, transform=reverse)
-            cv2.imwrite(f'sample-{count:03d}.png', image_grid.transpose(1, 2, 0) * 255)
+            cv2.imwrite(f'sample-{count:03d}.png', cv2.normalize(image_grid.transpose(1, 2, 0),  np.zeros_like(image_grid.transpose(1, 2, 0)), 0, 255, cv2.NORM_MINMAX))
             writer.add_image('samples',
                              image_grid,
                              count)
