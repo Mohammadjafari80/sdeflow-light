@@ -12,7 +12,7 @@ from lib.helpers import logging, create
 from tensorboardX import SummaryWriter
 import json
 from sklearn.metrics import roc_auc_score
-
+import cv2
 
 
 _folder_name_keys = ['dataset', 'real', 'debias', 'batch_size', 'lr', 'num_iterations']
@@ -170,7 +170,7 @@ def evaluate():
     with open(  './test_bpds.npy', 'wb') as f:
          np.save(f, test_bpd)
 
-    auc = roc_auc_score(testset.targets.detach().cpu().numpy().reshape((-1,)), test_bpd)
+    auc = roc_auc_score(testset.targets, test_bpd)
 
     return test_bpd.mean(), test_bpd.std() / len(testloader.dataset.data) ** 0.5 , auc
 
@@ -214,12 +214,15 @@ while not_finished:
             print_('Finished training')
             break
 
-        if count % args.sample_every == 0:
+        if count == 1 or count % args.sample_every == 0:
             gen_sde.eval()
+            image_grid = get_grid(gen_sde, input_channels, input_height, n=4,
+                                      num_steps=args.num_steps, transform=reverse)
+            cv2.imwrite(f'sample-{count:0.3d}.png', image_grid.transpose(1, 2, 0))
             writer.add_image('samples',
-                             get_grid(gen_sde, input_channels, input_height, n=4,
-                                      num_steps=args.num_steps, transform=reverse),
+                             image_grid,
                              count)
+            
             gen_sde.train()
 
         if count % args.checkpoint_every == 0:
