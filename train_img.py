@@ -101,8 +101,8 @@ elif args.dataset == 'cifar':
     trainset = torchvision.datasets.CIFAR10(root=os.path.join(args.dataroot, 'cifar10'), train=True,
                                             download=True, transform=transform)
 
-    transform.data = transform.data[np.array(transform.targets) == args.normal_class]
-    transform.targets = transform.targets[np.array(transform.targets) == args.normal_class]
+    trainset.data = trainset.data[np.array(trainset.targets) == args.normal_class]
+    trainset.targets = trainset.targets[np.array(trainset.targets) == args.normal_class]
 
     testset = torchvision.datasets.CIFAR10(root=os.path.join(args.dataroot, 'cifar10'), train=False,
                                            download=True, transform=transform)
