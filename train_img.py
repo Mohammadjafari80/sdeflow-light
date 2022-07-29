@@ -218,7 +218,10 @@ while not_finished:
             gen_sde.eval()
             image_grid = get_grid(gen_sde, input_channels, input_height, n=4,
                                       num_steps=args.num_steps, transform=reverse)
-            cv2.imwrite(f'sample-{count:03d}.png', cv2.normalize(image_grid.transpose(1, 2, 0),  np.zeros_like(image_grid.transpose(1, 2, 0)), 0, 255, cv2.NORM_MINMAX))
+            img = image_grid.transpose(1, 2, 0)
+            img = img / np.max(img)
+            img = (img * 255).astype(np.uint8)
+            cv2.imwrite(f'sample-{count:03d}.png', img)
             writer.add_image('samples',
                              image_grid,
                              count)
