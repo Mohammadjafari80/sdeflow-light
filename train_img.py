@@ -218,7 +218,7 @@ while not_finished:
             gen_sde.eval()
             image_grid = get_grid(gen_sde, input_channels, input_height, n=4,
                                       num_steps=args.num_steps, transform=reverse)
-            cv2.imwrite(f'sample-{count:0.3d}.png', image_grid.transpose(1, 2, 0))
+            cv2.imwrite(f'sample-{count:03d}.png', image_grid.transpose(1, 2, 0))
             writer.add_image('samples',
                              image_grid,
                              count)
