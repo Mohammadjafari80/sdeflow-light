@@ -11,6 +11,8 @@ from lib.models.unet import UNet
 from lib.helpers import logging, create
 from tensorboardX import SummaryWriter
 import json
+from sklearn.metrics import roc_auc_score
+
 
 
 _folder_name_keys = ['dataset', 'real', 'debias', 'batch_size', 'lr', 'num_iterations']
@@ -112,7 +114,7 @@ elif args.dataset == 'cifar':
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size,
                                               shuffle=True, num_workers=2)
     testloader = torch.utils.data.DataLoader(testset, batch_size=args.test_batch_size,
-                                             shuffle=True, num_workers=2)
+                                             shuffle=False, num_workers=2)
 
     drift_q = UNet(
         input_channels=input_channels,
@@ -168,7 +170,9 @@ def evaluate():
     with open(  './test_bpds.npy', 'wb') as f:
          np.save(f, test_bpd)
 
-    return test_bpd.mean(), test_bpd.std() / len(testloader.dataset.data) ** 0.5
+    auc = roc_auc_score(testset.targets.detach().cpu().numpy().reshape((-1,)), test_bpd)
+
+    return test_bpd.mean(), test_bpd.std() / len(testloader.dataset.data) ** 0.5 , auc
 
 
 if os.path.exists(os.path.join(folder_path, 'checkpoint.pt')):
@@ -200,10 +204,10 @@ while not_finished:
             writer.add_scalar('loss', loss.item(), count)
             writer.add_scalar('T', gen_sde.T.item(), count)
 
-            bpd, std_err = evaluate()
+            bpd, std_err, auc = evaluate()
             writer.add_scalar('bpd', bpd, count)
             writer.add_scalar('bpd_std_err', std_err, count)
-            print_(f'Iteration {count} \tBPD {bpd}')
+            print_(f'Iteration {count} \tBPD {bpd}\tAUC: {auc * 100}')
 
         if count >= args.num_iterations:
             not_finished = False
