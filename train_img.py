@@ -20,6 +20,9 @@ def get_args():
     parser = argparse.ArgumentParser()
 
     # i/o
+    parser.add_argument('--normal_class', type=int, default=0,
+                        help='normal class for anomaly')
+
     parser.add_argument('--dataset', type=str, choices=['mnist', 'cifar'], default='mnist')
     parser.add_argument('--dataroot', type=str, default='~/.datasets')
     parser.add_argument('--saveroot', type=str, default='~/.saved')
@@ -29,7 +32,7 @@ def get_args():
     parser.add_argument('--checkpoint_every', type=int, default=1000)
     parser.add_argument('--num_steps', type=int, default=1000,
                         help='number of integration steps for sampling')
-
+    
     # optimization
     parser.add_argument('--T0', type=float, default=1.0,
                         help='integration time')
@@ -97,8 +100,14 @@ elif args.dataset == 'cifar':
     transform = transforms.Compose([transforms.RandomHorizontalFlip(), transforms.ToTensor()])
     trainset = torchvision.datasets.CIFAR10(root=os.path.join(args.dataroot, 'cifar10'), train=True,
                                             download=True, transform=transform)
+
+    transform.data = transform.data[np.array(transform.targets) == args.normal_class]
+    transform.targets = transform.targets[np.array(transform.targets) == args.normal_class]
+
     testset = torchvision.datasets.CIFAR10(root=os.path.join(args.dataroot, 'cifar10'), train=False,
                                            download=True, transform=transform)
+
+    testset.targets  = [int(t==args.normal_class) for t in testset.targets]
 
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size,
                                               shuffle=True, num_workers=2)
