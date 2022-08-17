@@ -38,6 +38,7 @@ def get_args():
     # optimization
     parser.add_argument('--T0', type=float, default=1.0,
                         help='integration time')
+    parser.add_argument('--std', type=float, default=0.002, help='noise std')                               
     parser.add_argument('--vtype', type=str, choices=['rademacher', 'gaussian'], default='rademacher',
                         help='random vector for the Hutchinson trace estimator')
     parser.add_argument('--batch_size', type=int, default=64)
@@ -151,28 +152,46 @@ else:
 @torch.no_grad()
 def evaluate():
     test_bpd = list()
+    test_bpd_with_noise = list()
     gen_sde.eval()
     for x_test, _ in testloader:
         if cuda:
             x_test = x_test.cuda()
+
+        x_test_noisy = x_test +  torch.randn(x_test.size()) * args.std
         x_test = x_test * 255 / 256 + torch.rand_like(x_test) / 256
+
         if args.real:
             x_test, ldj = logit.forward_transform(x_test, 0)
             elbo_test = gen_sde.elbo_random_t_slice(x_test)
             elbo_test += ldj
+
+            x_test_noisy, ldj_noisy = logit.forward_transform(x_test_noisy, 0)
+            elbo_test_noisy = gen_sde.elbo_random_t_slice(x_test_noisy)
+            elbo_test_noisy += ldj_noisy
         else:
             elbo_test = gen_sde.elbo_random_t_slice(x_test)
+            elbo_test_noisy = gen_sde.elbo_random_t_slice(x_test_noisy)
 
         test_bpd.extend(- (elbo_test.data.cpu().numpy() / dimx) / np.log(2) + 8)
+        test_bpd_with_noise.extend(- (elbo_test_noisy.data.cpu().numpy() / dimx) / np.log(2) + 8)
+
     gen_sde.train()
     test_bpd = np.array(test_bpd)
+    test_bpd_with_noise = np.array(test_bpd_with_noise)
+
 
     with open(  './test_bpds.npy', 'wb') as f:
          np.save(f, test_bpd)
 
-    auc = roc_auc_score(testset.targets, test_bpd)
+    with open(  './test_bpd_with_noise.npy', 'wb') as f:
+         np.save(f, test_bpd_with_noise)
 
-    return test_bpd.mean(), test_bpd.std() / len(testloader.dataset.data) ** 0.5 , auc
+
+    auc = roc_auc_score(testset.targets, test_bpd)
+    auc_noisy = roc_auc_score(testset.targets, test_bpd_with_noise)
+
+    return test_bpd.mean(), test_bpd.std() / len(testloader.dataset.data) ** 0.5 , auc, auc_noisy
 
 
 if os.path.exists(os.path.join(folder_path, 'checkpoint.pt')):
@@ -204,10 +223,10 @@ while not_finished:
             writer.add_scalar('loss', loss.item(), count)
             writer.add_scalar('T', gen_sde.T.item(), count)
 
-            bpd, std_err, auc = evaluate()
+            bpd, std_err, auc, auc_noisy = evaluate()
             writer.add_scalar('bpd', bpd, count)
             writer.add_scalar('bpd_std_err', std_err, count)
-            print_(f'Iteration {count} \tBPD {bpd}\tAUC: {auc * 100}\tLoss: {loss.item()}')
+            print_(f'Iteration {count} \tBPD {bpd}\tAUC: {auc * 100}\tAUC Gaussian Noise: {auc_noisy * 100}\tLoss: {loss.item()} ')
 
         if count >= args.num_iterations:
             not_finished = False
