@@ -110,7 +110,7 @@ elif args.dataset == 'cifar':
     testset = torchvision.datasets.CIFAR10(root=os.path.join(args.dataroot, 'cifar10'), train=False,
                                            download=True, transform=transform)
 
-    testset.targets  = [int(t==args.normal_class) for t in testset.targets]
+    testset.targets  = [int(t!=args.normal_class) for t in testset.targets]
 
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size,
                                               shuffle=True, num_workers=2)
