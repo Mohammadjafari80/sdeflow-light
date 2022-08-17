@@ -158,7 +158,7 @@ def evaluate():
         if cuda:
             x_test = x_test.cuda()
 
-        x_test_noisy = x_test +  torch.randn(x_test.size()) * args.std
+        x_test_noisy = x_test +  torch.randn(x_test.size()).cuda() * args.std
         x_test = x_test * 255 / 256 + torch.rand_like(x_test) / 256
 
         if args.real:
